@@ -28,7 +28,7 @@ src/lex.yy.cpp: src/parser.lex
 clean:
 	rm -f ndet src/*.o src/*~ *~
 cleanparser:
-	# rm -f src/lex.yy.cpp src/location.hh src/parser.tab.cpp \
-	  src/parser.tab.hpp src/position.hh src/stack.hh
+	# rm -f src/lex.yy.cpp src/location.hh src/parser.tab.cpp
+	# rm -f src/parser.tab.hpp src/position.hh src/stack.hh
 	rm -f src/lex.yy.cpp src/parser.tab.cpp
 	# $(EXECUTABLE)
