@@ -30,5 +30,7 @@ clean:
 cleanparser:
 	# rm -f src/lex.yy.cpp src/location.hh src/parser.tab.cpp
 	# rm -f src/parser.tab.hpp src/position.hh src/stack.hh
-	rm -f src/lex.yy.cpp src/parser.tab.cpp
+	@echo -e "\033[1;31mError: the following command causes an error. We \
+	can't rebuild the binary\033[0m"
+	# rm -f src/lex.yy.cpp src/parser.tab.cpp
 	# $(EXECUTABLE)
