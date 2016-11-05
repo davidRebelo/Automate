@@ -186,6 +186,26 @@ bool EstDeterministe(const sAutoNDE &at)
   }
 
   return true;
+  // int x = 0;
+  // for(epsilon_t::const_iterator it = epsilon_clot.begin(); it != epsilon_clot.end(); it++)
+  // {
+  //   x++;
+  //   if (!(it->size() == 0) && !(it->size() == it->count(x)))
+  //   {
+  //     return false;
+  //   }
+  // }
+  // for (trans_t::const_iterator i = trans.begin(); i != trans.end(); i++)
+  // {
+  //   for (vector<etatset_t>::const_iterator j = (*i).begin(); j != (*i).end(); j++)
+  //   {
+  //     if((*j).size() > 1)
+  //     {
+  //       return false;
+  //     }
+  //   }
+  // }
+  // return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -198,7 +218,7 @@ void Fermeture(const sAutoNDE &at, etatset_t &e)
 
   for (it = e.begin(); it != e.end(); it++)
   {
-    for (it2 = at.epsilon[*it].begin; it2 != at.epsilon[*it].end(); it2++)
+    for (it2 = at.epsilon[*it].begin(); it2 != at.epsilon[*it].end(); it2++)
     {
       e.insert(*it2);
     }
@@ -207,16 +227,35 @@ void Fermeture(const sAutoNDE &at, etatset_t &e)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-etatset_t Delta(const sAutoNDE& at, const etatset_t& e, symb_t c){
+etatset_t Delta(const sAutoNDE &at, const etatset_t &e, symb_t c)
+{
   //TODO sur la base de celle pour le cas sans transitions spontanées,
   // définir cette fonction en utilisant Fermeture
+  etatset_t res, tmp;
+  etatset_t::const_iterator it, it2;
 
-  return e;
+  for (it = e.begin(); it != e.end(); it++)
+  {
+    tmp.insert(*it);
+  }
+  Fermeture(at, tmp);
+
+  for (it = tmp.begin(); it != tmp.end(); it++)
+  {
+    for (it2 = at.trans[*it][c - ASCII_A].begin();
+        it2 != at.trans[*it][c - ASCII_A].end(); it2++)
+    {
+      res.insert(*it2);
+    }
+  }
+
+  return res;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool Accept(const sAutoNDE& at, string str){
+bool Accept(const sAutoNDE &at, string str)
+{
   //TODO définir cette fonction
 
   return false;
@@ -224,7 +263,8 @@ bool Accept(const sAutoNDE& at, string str){
 
 ////////////////////////////////////////////////////////////////////////////////
 
-sAutoNDE Determinize(const sAutoNDE& at){
+sAutoNDE Determinize(const sAutoNDE &at)
+{
   sAutoNDE r;
 
   //TODO définir cette fonction
@@ -234,7 +274,8 @@ sAutoNDE Determinize(const sAutoNDE& at){
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ostream& operator<<(ostream& out, const sAutoNDE& at){
+ostream &operator<<(ostream &out, const sAutoNDE &at)
+{
   //TODO définir cette fonction
 
   return out;
@@ -242,7 +283,8 @@ ostream& operator<<(ostream& out, const sAutoNDE& at){
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool ToGraph(sAutoNDE& at, string path){
+bool ToGraph(sAutoNDE &at, string path)
+{
   //TODO définir cette fonction
 
   return false;
@@ -253,7 +295,8 @@ bool ToGraph(sAutoNDE& at, string path){
 // Fonctions à compléter pour la seconde partie du projet
 // -----------------------------------------------------------------------------
 
-sAutoNDE Append(const sAutoNDE& x, const sAutoNDE& y){
+sAutoNDE Append(const sAutoNDE &x, const sAutoNDE &y)
+{
   // fonction outil : on garde x, et on "ajoute" trans et epsilon de y
   // en renommant ses états, id est en décallant les indices des états de y
   // de x.nb_etats
@@ -267,7 +310,8 @@ sAutoNDE Append(const sAutoNDE& x, const sAutoNDE& y){
 
 ////////////////////////////////////////////////////////////////////////////////
 
-sAutoNDE Union(const sAutoNDE& x, const sAutoNDE& y){
+sAutoNDE Union(const sAutoNDE &x, const sAutoNDE &y)
+{
   assert(x.nb_symbs == y.nb_symbs);
   sAutoNDE r = Append(x, y);
 
@@ -278,7 +322,8 @@ sAutoNDE Union(const sAutoNDE& x, const sAutoNDE& y){
 
 ////////////////////////////////////////////////////////////////////////////////
 
-sAutoNDE Concat(const sAutoNDE& x, const sAutoNDE& y){
+sAutoNDE Concat(const sAutoNDE &x, const sAutoNDE &y)
+{
   assert(x.nb_symbs == y.nb_symbs);
   sAutoNDE r = Append(x, y);
 
@@ -289,7 +334,8 @@ sAutoNDE Concat(const sAutoNDE& x, const sAutoNDE& y){
 
 ////////////////////////////////////////////////////////////////////////////////
 
-sAutoNDE Complement(const sAutoNDE& x){
+sAutoNDE Complement(const sAutoNDE &x)
+{
   //TODO définir cette fonction
 
   return x;
@@ -297,7 +343,8 @@ sAutoNDE Complement(const sAutoNDE& x){
 
 ////////////////////////////////////////////////////////////////////////////////
 
-sAutoNDE Kleene(const sAutoNDE& x){
+sAutoNDE Kleene(const sAutoNDE &x)
+{
   //TODO définir cette fonction
 
   return x;
@@ -305,7 +352,8 @@ sAutoNDE Kleene(const sAutoNDE& x){
 
 ////////////////////////////////////////////////////////////////////////////////
 
-sAutoNDE Intersection(const sAutoNDE& x, const sAutoNDE& y){
+sAutoNDE Intersection(const sAutoNDE &x, const sAutoNDE &y)
+{
   //TODO définir cette fonction
 
   return x;
@@ -314,7 +362,8 @@ sAutoNDE Intersection(const sAutoNDE& x, const sAutoNDE& y){
 
 ////////////////////////////////////////////////////////////////////////////////
 
-sAutoNDE ExpressionRationnelle2Automate(string expr){
+sAutoNDE ExpressionRationnelle2Automate(string expr)
+{
   cout << "Construction d'un automate à partir d'une expression rationnelle\n";
   cout << "  Expression en entrée (string) : " << expr << endl;
 
@@ -331,7 +380,8 @@ sAutoNDE ExpressionRationnelle2Automate(string expr){
 
 ////////////////////////////////////////////////////////////////////////////////
 
-string Automate2ExpressionRationnelle(sAutoNDE at){
+string Automate2ExpressionRationnelle(sAutoNDE at)
+{
   cout << "Construction d'une expression rationnelle à partir d'un automate\n";
 
   string sr;
@@ -343,7 +393,8 @@ string Automate2ExpressionRationnelle(sAutoNDE at){
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool Equivalent(const sAutoNDE& a1, const sAutoNDE& a2) {
+bool Equivalent(const sAutoNDE &a1, const sAutoNDE &a2)
+{
 
   //TODO définir cette fonction
 
@@ -352,7 +403,8 @@ bool Equivalent(const sAutoNDE& a1, const sAutoNDE& a2) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Help(ostream& out, char *s){
+void Help(ostream &out, char *s)
+{
   out << "Utilisation du programme " << s << " :" << endl ;
   out << "-acc ou -accept Input Word :\n\t détermine si le mot Word est accepté"
       << " par l'automate Input" << endl;
@@ -377,20 +429,22 @@ void Help(ostream& out, char *s){
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int main(int argc, char* argv[] ){
-  if(argc < 3){
+int main(int argc, char* argv[] )
+{
+  if (argc < 3)
+  {
     Help(cout, argv[0]);
     return EXIT_FAILURE;
   }
 
   int pos;
-  int act=-1;                 // pos et act pour savoir quelle action effectuer
+  int act = -1;               // pos et act pour savoir quelle action effectuer
   int nb_ifiles = 0;          // nombre de fichiers en entrée
   int nb_ofiles = 0;          // nombre de fichiers en sortie
   string str, in1, in2, out, acc, expr;
   // chaines pour (resp.) tampon; fichier d'entrée Input1; fichier d'entrée
   // Input2; fichier de sortie et chaine dont l'acceptation est à tester
-  bool graphMode=false;     // sortie graphviz ?
+  bool graphMode = false;     // sortie graphviz ?
 
   // options acceptées
   const size_t NBOPT = 8;
@@ -401,22 +455,35 @@ int main(int argc, char* argv[] ){
     "g"};
 
   // on essaie de "parser" chaque option de la ligne de commande
-  for(int i=1; i<argc; ++i){
-    if (DEBUG) cerr << "argv[" << i << "] = '" << argv[i] << "'" << endl;
+  for (int i=1; i<argc; ++i)
+  {
+    if (DEBUG)
+    {
+      cerr << "argv[" << i << "] = '" << argv[i] << "'" << endl;
+    }
     str = argv[i];
     pos = -1;
-    string* pL = find(aLN, aLN+NBOPT, str.substr(1));
-    string* pS = find(aSN, aSN+NBOPT, str.substr(1));
+    string* pL = find(aLN, aLN + NBOPT, str.substr(1));
+    string* pS = find(aSN, aSN + NBOPT, str.substr(1));
 
-    if(pL!=aLN+NBOPT)
+    if (pL != aLN + NBOPT)
+    {
       pos = pL - aLN;
-    if(pS!=aSN+NBOPT)
+    }
+    if (pS != aSN + NBOPT)
+    {
       pos = pS - aSN;
+    }
 
-    if(pos != -1){
+    if (pos != -1)
+    {
       // (pos != -1) <=> on a trouvé une option longue ou courte
-      if (DEBUG) cerr << "Key found (" << pos << ") : " << str << endl;
-      switch (pos) {
+      if (DEBUG)
+      {
+        cerr << "Key found (" << pos << ") : " << str << endl;
+      }
+      switch (pos)
+      {
         case 0: //acc
           in1 = argv[++i];
           acc = argv[++i];
@@ -464,23 +531,29 @@ int main(int argc, char* argv[] ){
           return EXIT_FAILURE;
       }
     }
-    else{
-      cerr << "Option inconnue "<< str << endl;
+    else
+    {
+      cerr << "Option inconnue " << str << endl;
       return EXIT_FAILURE;
     }
 
-    if(pos<7){
-      if(act > -1){
-        cerr << "Plusieurs actions spécififées"<< endl;
+    if (pos<7)
+    {
+      if(act > -1)
+      {
+        cerr << "Plusieurs actions spécififées" << endl;
         return EXIT_FAILURE;
       }
       else
+      {
         act = pos;
+      }
     }
   }
 
-  if (act == -1){
-    cerr << "Pas d'action spécififée"<< endl;
+  if (act == -1)
+  {
+    cerr << "Pas d'action spécififée" << endl;
     return EXIT_FAILURE;
   }
 
@@ -490,21 +563,26 @@ int main(int argc, char* argv[] ){
   sAutoNDE at1, at2, atr;
 
   // lecture du des fichiers en entrée
-  if ((nb_ifiles == 1 or nb_ifiles == 2) and !FromFile(at1, in1)){
+  if ((nb_ifiles == 1 or nb_ifiles == 2) and !FromFile(at1, in1))
+  {
     cerr << "Erreur de lecture " << in1 << endl;
     return EXIT_FAILURE;
   }
-  if (nb_ifiles ==2 and !FromFile(at2, in2)){
+  if (nb_ifiles ==2 and !FromFile(at2, in2))
+  {
     cerr << "Erreur de lecture " << in2 << endl;
     return EXIT_FAILURE;
   }
 
-  switch(act) {
+  switch(act)
+  {
     case 0: //acc
-      if (Accept(at1, acc)){
+      if (Accept(at1, acc))
+      {
         cout << "'" << acc << "' est accepté : OUI\n";
       }
-      else {
+      else
+      {
         cout << "'" << acc << "' est accepté : NON\n";
       }
       break;
@@ -512,10 +590,12 @@ int main(int argc, char* argv[] ){
       atr = Determinize(at1);
       break;
     case 2: //isdet
-      if (EstDeterministe(at1)){
+      if (EstDeterministe(at1))
+      {
         cout << "l'automate fourni en entrée est déterministe : OUI\n";
       }
-      else {
+      else
+      {
         cout << "l'automate fourni en entrée est déterministe : NON\n";
       }
       break;
@@ -527,10 +607,12 @@ int main(int argc, char* argv[] ){
       atr =  ExpressionRationnelle2Automate(expr);
       break;
     case 5: //equ
-      if (Equivalent(at1,at2)){
+      if (Equivalent(at1,at2))
+      {
         cout << "les deux automates sont équivalents : OUI\n";
       }
-      else {
+      else
+      {
         cout << "les deux automates sont équivalents : NON\n";
       }
       break;
@@ -541,19 +623,23 @@ int main(int argc, char* argv[] ){
       return EXIT_FAILURE;
   }
 
-  if (nb_ofiles == 1){
+  if (nb_ofiles == 1)
+  {
     // on affiche le résultat
     // cout << "Automate résultat :\n----------------\n";
     // cout << atr;
 
     // écriture dans un fichier texte
     ofstream f((out + ".txt").c_str(), ios::trunc);
-    if(f.fail())
+    if (f.fail())
+    {
       return EXIT_FAILURE;
+    }
     f << atr;
 
     // génération d'un fichier graphviz
-    if(graphMode){
+    if (graphMode)
+    {
       ToGraph(atr, out + ".gv");
       system(("dot -Tpng " + out + ".gv -o " + out + ".png").c_str());
     }
