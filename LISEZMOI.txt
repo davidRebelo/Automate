@@ -28,6 +28,9 @@ src/ndet.cpp
 Commentaires
 ------------
 
+Make cleanparser fonctionne mais il est impossible de recréer les fichiers
+binaires ensuite donc l'option est commenté dans le Makefile.
+
 On a de nombreux avertissements de la forme suivante :
  * ndet.cpp:125:6: warning: unused parameter ‘at’ [-Wunused-parameter]
 
