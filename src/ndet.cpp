@@ -20,8 +20,8 @@ using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const unsigned int ASCII_A = 97;
-const unsigned int ASCII_Z = ASCII_A + 26;
+const unsigned int ASCII_A = 'a';
+const unsigned int ASCII_Z = 'z';
 const bool         DEBUG = false;
 
 typedef size_t                            etat_t;
@@ -99,7 +99,7 @@ bool FromFile(sAutoNDE &at, string path)
     }
 
     // les autres lignes donnent les états finaux
-    for(size_t i = 0; i < at.nb_finaux; i++)
+    for (size_t i = 0; i < at.nb_finaux; i++)
     {
       do
       {
@@ -119,7 +119,7 @@ bool FromFile(sAutoNDE &at, string path)
     // resize dynamiques
     at.epsilon.resize(at.nb_etats);
     at.trans.resize(at.nb_etats);
-    for (size_t i=0;i<at.nb_etats;++i)
+    for (size_t i = 0; i < at.nb_etats; ++i)
     {
       at.trans[i].resize(at.nb_symbs);
     }
@@ -130,19 +130,21 @@ bool FromFile(sAutoNDE &at, string path)
       line.clear();
       getline(myfile, line);
       if (line.empty() && line[0] == '#')
+      {
         continue;
+      }
       iss.clear();
       iss.str(line);
 
       // si une des trois lectures echoue, on passe à la suite
       if ((iss >> s).fail() || (iss >> a).fail() || (iss >> t).fail() || \
-          (a< ASCII_A ) || (a> ASCII_Z ))
+          (a < ASCII_A ) || (a > ASCII_Z ))
       {
         continue;
       }
 
       //test espilon ou non
-      if ((a-ASCII_A) >= at.nb_symbs)
+      if ((a - ASCII_A) >= at.nb_symbs)
       {
         //        cerr << "s=" << s<< ", (e), t=" << t << endl;
         at.epsilon[s].insert(t);
@@ -169,16 +171,16 @@ bool FromFile(sAutoNDE &at, string path)
 bool EstDeterministe(const sAutoNDE &at)
 {
   unsigned int it, it2;
-  if (at.epsilon.size() != 0)
-  {
-    return false;
-  }
-
   for (it = 0; it < at.nb_etats; it++)
   {
+    if (at.epsilon[it].size() != 0)
+    {
+      return false;
+    }
+
     for (it2 = 0; it2 < at.nb_symbs; it2++)
     {
-      if (at.trans[it][it2].size() != 1)
+      if (at.trans[it][it2].size() > 1)
       {
         return false;
       }
