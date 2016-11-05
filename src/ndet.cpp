@@ -59,7 +59,8 @@ struct sAutoNDE{
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool FromFile(sAutoNDE& at, string path){
+bool FromFile(sAutoNDE &at, string path)
+{
   ifstream myfile(path.c_str(), ios::in);
   //un flux d'entree obtenu à partir du nom du fichier
   string line;
@@ -82,26 +83,34 @@ bool FromFile(sAutoNDE& at, string path){
     iss.str(line);
     if ((iss >> at.nb_etats).fail() || (iss >> at.nb_symbs).fail() || \
         (iss >> at.nb_finaux).fail())
+    {
       return false;
+    }
     // la deuxième ligne donne l'état initial
     do
     {
       getline (myfile, line);
-    } while (line.empty() || line[0]=='#');
+    } while (line.empty() || line[0] == '#');
     iss.clear();
     iss.str(line);
     if ((iss >> at.initial).fail())
+    {
       return -1;
+    }
 
     // les autres lignes donnent les états finaux
-    for(size_t i = 0; i < at.nb_finaux; i++){
-      do{
-        getline (myfile,line);
-      } while (line.empty() || line[0]=='#');
+    for(size_t i = 0; i < at.nb_finaux; i++)
+    {
+      do
+      {
+        getline (myfile, line);
+      } while (line.empty() || line[0] == '#');
       iss.clear();
       iss.str(line);
-      if((iss >> s).fail())
+      if ((iss >> s).fail())
+      {
         continue;
+      }
       //        cerr << "s= " << s << endl;
       at.finaux.insert(s);
     }
@@ -110,31 +119,38 @@ bool FromFile(sAutoNDE& at, string path){
     // resize dynamiques
     at.epsilon.resize(at.nb_etats);
     at.trans.resize(at.nb_etats);
-    for(size_t i=0;i<at.nb_etats;++i)
+    for (size_t i=0;i<at.nb_etats;++i)
+    {
       at.trans[i].resize(at.nb_symbs);
+    }
 
     // lecture de la relation de transition
-    while(myfile.good()){
+    while (myfile.good())
+    {
       line.clear();
-      getline (myfile,line);
-      if (line.empty() && line[0]=='#')
+      getline(myfile, line);
+      if (line.empty() && line[0] == '#')
         continue;
       iss.clear();
       iss.str(line);
 
       // si une des trois lectures echoue, on passe à la suite
-      if((iss >> s).fail() || (iss >> a).fail() || (iss >> t).fail() || \
+      if ((iss >> s).fail() || (iss >> a).fail() || (iss >> t).fail() || \
           (a< ASCII_A ) || (a> ASCII_Z ))
+      {
         continue;
+      }
 
       //test espilon ou non
-      if ((a-ASCII_A) >= at.nb_symbs){
+      if ((a-ASCII_A) >= at.nb_symbs)
+      {
         //        cerr << "s=" << s<< ", (e), t=" << t << endl;
-        // TODO: remplir epsilon
+        at.epsilon[s].insert(t);
       }
-      else{
+      else
+      {
         // cerr << "s=" << s<< ", a=" << a-ASCII_A << ", t=" << t << endl;
-        // TODO: remplir trans
+        at.trans[s][a - ASCII_A].insert(t);
       }
     }
     myfile.close();
@@ -164,7 +180,7 @@ bool EstDeterministe(const sAutoNDE &at)
     {
       if (at.trans[it][it2].size() != 1)
       {
-        reurn false;
+        return false;
       }
     }
   }
@@ -174,11 +190,19 @@ bool EstDeterministe(const sAutoNDE &at)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Fermeture(const sAutoNDE& at, etatset_t& e){
+void Fermeture(const sAutoNDE &at, etatset_t &e)
+{
   // Cette fonction clot l'ensemble d'états E={e_0, e_1, ... ,e_n} passé en
   // paramètre avec les epsilon transitions
+  etatset_t::const_iterator it, it2;
 
-  //TODO définir cette fonction
+  for (it = e.begin(); it != e.end(); it++)
+  {
+    for (it2 = at.epsilon[*it].begin; it2 != at.epsilon[*it].end(); it2++)
+    {
+      e.insert(*it2);
+    }
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
