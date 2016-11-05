@@ -71,23 +71,26 @@ bool FromFile(sAutoNDE& at, string path){
   symb_t a(0);
   // un symbole temporaire
 
-  if (myfile.is_open()){
+  if (myfile.is_open())
+  {
     // la première ligne donne 'nb_etats nb_symbs nb_finaux'
-    do{
-      getline(myfile,line);
-    } while (line.empty() || line[0]=='#');
+    do
+    {
+      getline(myfile, line);
+    } while (line.empty() || line[0] == '#');
     // on autorise les lignes de commentaires : celles qui commencent par '#'
     iss.str(line);
-    if((iss >> at.nb_etats).fail() || (iss >> at.nb_symbs).fail() || \
+    if ((iss >> at.nb_etats).fail() || (iss >> at.nb_symbs).fail() || \
         (iss >> at.nb_finaux).fail())
       return false;
     // la deuxième ligne donne l'état initial
-    do{
-      getline (myfile,line);
+    do
+    {
+      getline (myfile, line);
     } while (line.empty() || line[0]=='#');
     iss.clear();
     iss.str(line);
-    if((iss >> at.initial).fail())
+    if ((iss >> at.initial).fail())
       return -1;
 
     // les autres lignes donnent les états finaux
@@ -147,10 +150,26 @@ bool FromFile(sAutoNDE& at, string path){
 // -----------------------------------------------------------------------------
 
 
-bool EstDeterministe(const sAutoNDE& at){
-  //TODO définir cette fonction
+bool EstDeterministe(const sAutoNDE &at)
+{
+  unsigned int it, it2;
+  if (at.epsilon.size() != 0)
+  {
+    return false;
+  }
 
-  return false;
+  for (it = 0; it < at.nb_etats; it++)
+  {
+    for (it2 = 0; it2 < at.nb_symbs; it2++)
+    {
+      if (at.trans[it][it2].size() != 1)
+      {
+        reurn false;
+      }
+    }
+  }
+
+  return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
