@@ -82,7 +82,8 @@ bool FromFile(sAutoNDE &at, string path)
     } while (line.empty() || line[0] == '#');
     // on autorise les lignes de commentaires : celles qui commencent par '#'
     iss.str(line);
-    if ((iss >> at.nb_etats).fail() || (iss >> at.nb_symbs).fail() ||
+    if ((iss >> at.nb_etats).fail() ||
+        (iss >> at.nb_symbs).fail() ||
         (iss >> at.nb_finaux).fail())
     {
       return false;
@@ -137,14 +138,17 @@ bool FromFile(sAutoNDE &at, string path)
       iss.clear();
       iss.str(line);
 
-      // si une des trois lectures echoue, on passe à la suite
-      if ((iss >> s).fail() || (iss >> a).fail() || (iss >> t).fail() ||
-          (a < ASCII_A ) || (a > ASCII_Z ))
+      // si une des trois lectures échoue, on passe à la suite
+      if ((iss >> s).fail() ||
+          (iss >> a).fail() ||
+          (iss >> t).fail() ||
+          (a < ASCII_A ) ||
+          (a > ASCII_Z ))
       {
         continue;
       }
 
-      //test espilon ou non
+      //test epsilon ou non
       if ((a - ASCII_A) >= at.nb_symbs)
       {
         //        cerr << "s=" << s<< ", (e), t=" << t << endl;
@@ -174,11 +178,14 @@ bool EstDeterministe(const sAutoNDE &at)
   unsigned int it, it2;
   for (it = 0; it < at.nb_etats; it++)
   {
+    // s'il y a des transitions epsilon = pas déterministe
     if (at.epsilon[it].size() != 0)
     {
       return false;
     }
 
+    // pour chaque états, il ne doit pas y avoir plus d'une transition pour un
+    // symbole donné.
     for (it2 = 0; it2 < at.nb_symbs; it2++)
     {
       if (at.trans[it][it2].size() > 1)
@@ -195,11 +202,13 @@ bool EstDeterministe(const sAutoNDE &at)
 
 void Fermeture(const sAutoNDE &at, etatset_t &e)
 {
-  // Cette fonction clot l'ensemble d'états E={e_0, e_1, ... ,e_n} passé en
+  // Cette fonction clôt l'ensemble d'états E={e_0, e_1, ... ,e_n} passé en
   // paramètre avec les epsilon transitions
   etatset_t f;
   etatset_t::const_iterator it, it2;
 
+  // pour chaque états, on renvoie un ensemble d'états accessible via des
+  // epsilon transition.
   do
   {
     f = e;
@@ -217,18 +226,19 @@ void Fermeture(const sAutoNDE &at, etatset_t &e)
 
 etatset_t Delta(const sAutoNDE &at, const etatset_t &e, symb_t c)
 {
-  //TODO sur la base de celle pour le cas sans transitions spontanées,
-  // définir cette fonction en utilisant Fermeture
   etatset_t res, tmp;
   etatset_t::const_iterator it, it2;
 
   tmp = e;
   Fermeture(at, tmp);
 
+  // pour chaque états, on renvoie un ensemble d'états accessible avec le
+  // symbole c
   for (it = tmp.begin(); it != tmp.end(); it++)
   {
     for (it2 = at.trans[*it][c - ASCII_A].begin();
-        it2 != at.trans[*it][c - ASCII_A].end(); it2++)
+        it2 != at.trans[*it][c - ASCII_A].end();
+        it2++)
     {
       res.insert(*it2);
     }
@@ -250,6 +260,7 @@ sAutoNDE Determinize(const sAutoNDE &at)
   etatset_t::const_iterator sit;
   etatset_t seen;
 
+  // cas simple, s'il est déjà déterministe, on le renvoie tel quel
   if (EstDeterministe(at))
   {
     return at;
@@ -260,7 +271,7 @@ sAutoNDE Determinize(const sAutoNDE &at)
   r.nb_finaux = 0;
   r.initial = 0;
 
-  // créer l'état initial deterministe.
+  // créer l'état initial déterministe.
   r.nb_etats++;
   r.trans.resize(r.nb_etats);
   r.trans[r.initial].resize(r.nb_symbs);
@@ -283,7 +294,7 @@ sAutoNDE Determinize(const sAutoNDE &at)
       {
         continue;
       }
-      // créer un nouvel état et met à jour la correspondence entre les
+      // créer un nouvel état et met à jour la correspondance entre les
       // combinaison d'états nondet vers un état det.
       if (combstate.find(tmp) == combstate.end())
       {
@@ -292,7 +303,7 @@ sAutoNDE Determinize(const sAutoNDE &at)
         r.trans[r.nb_etats - 1].resize(r.nb_symbs);
         combstate[tmp] = r.nb_etats - 1;
       }
-      // ajoute la transition pour le symbole c pour tous les etats qui
+      // ajoute la transition pour le symbole c pour tous les états qui
       // correspondent à une combinaison de current.
       for (mit = combstate.begin(); mit != combstate.end(); ++mit)
       {
@@ -340,14 +351,19 @@ bool Accept(const sAutoNDE &at, string str)
   r = Determinize(at);
 
   current = r.initial;
+  // pour chaque caractère du mot :
   for (it = str.begin(); it != str.end(); ++it)
   {
+    // si le caractère courant n'est pas dans l'alphabet.
     if ((symb_t)*it < ASCII_A || (symb_t)*it >= ASCII_A + r.nb_symbs)
     {
       return false;
     }
     etatset_t &tmp = r.trans[current][*it - ASCII_A];
     assert(tmp.size() <= 1);
+    // s'il n'existe pas de transition depuis l'état courant avec le symbole
+    // courant, il ne peut pas y avoir plus d'une transition car on a
+    // déterminiser l'automate.
     if (tmp.size() != 1)
     {
       return false;
@@ -365,12 +381,16 @@ ostream &operator<<(ostream &out, const sAutoNDE &at)
   etatset_t::const_iterator sit;
   unsigned int it, it2;
 
+  // <nb_etats> <nb_symboles> <nb_etats_finaux>
   out << at.nb_etats << " " << at.nb_symbs << " " << at.nb_finaux << endl;
+  // <état initial>
   out << at.initial << endl;
+  // pour chaque états finaux, on l'ajoute à la suite <état final n>
   for (sit = at.finaux.begin(); sit != at.finaux.end(); ++sit)
   {
     out << *sit << endl;
   }
+  // pour chaque états, on écrit <état x> <symbole y> <état z>
   for (it = 0; it < at.nb_etats; it++)
   {
     for (it2 = 0; it2 < at.nb_symbs; it2++)
@@ -394,13 +414,21 @@ bool ToGraph(sAutoNDE &at, string path)
   etatset_t::const_iterator sit;
   unsigned int it, it2;
   ofstream out(path.c_str(), ios::out);
-  out << "digraph finite_state_machine {\n\trankdir=LR;\n\tsize=\"10,10\"\n\n\tnode [shape = doublecircle]; ";
+  out << "digraph finite_state_machine {" << endl;
+  out << "\trankdir=LR;" << endl;
+  out << "\tsize=\"10,10\"" << endl << endl;
+  out << "\tnode [shape = doublecircle]; ";
+  // tous les états finaux
   for (sit = at.finaux.begin(); sit != at.finaux.end(); ++sit)
   {
     out << *sit << " ";
   }
-  out << ";\n\tnode [shape = point ]; q;\n\tnode [shape = circle];\n\n\tq -> ";
-  out << at.initial << ";" << endl;
+  out << ";" << endl;
+  out << "\tnode [shape = point ]; q;" << endl;
+  out << "\tnode [shape = circle];" << endl << endl;
+  out << "\tq -> " << at.initial << ";" << endl;
+  // <état départ> -> <état final> [label = "<char>"];
+  // toutes les transitions
   for (it = 0; it < at.nb_etats; it++)
   {
     for (it2 = 0; it2 < at.nb_symbs; it2++)
@@ -409,7 +437,8 @@ bool ToGraph(sAutoNDE &at, string path)
           sit != at.trans[it][it2].end();
           ++sit)
       {
-        out << "\t" << it << " -> " << *sit << " [label = \"" << (char)(it2 + ASCII_A) << "\"];" << endl;
+        out << "\t" << it << " -> " << *sit;
+        out << " [label = \"" << (char)(it2 + ASCII_A) << "\"];" << endl;
       }
     }
   }
@@ -426,7 +455,7 @@ bool ToGraph(sAutoNDE &at, string path)
 sAutoNDE Append(const sAutoNDE &x, const sAutoNDE &y)
 {
   // fonction outil : on garde x, et on "ajoute" trans et epsilon de y
-  // en renommant ses états, id est en décallant les indices des états de y
+  // en renommant ses états, id est en décalant les indices des états de y
   // de x.nb_etats
   assert(x.nb_symbs == y.nb_symbs);
   sAutoNDE r;
@@ -534,23 +563,23 @@ bool Equivalent(const sAutoNDE &a1, const sAutoNDE &a2)
 void Help(ostream &out, char *s)
 {
   out << "Utilisation du programme " << s << " :" << endl ;
-  out << "-acc ou -accept Input Word :\n\t détermine si le mot Word est accepté"
-      << " par l'automate Input" << endl;
-  out << "-det ou -determinize Input Output [-g] :\n\t déterminise l'automate "
-      << "Input, écrit le résultat dans Output" << endl;
-  out << "-isdet ou -is_deterministic Input :\n\t détermine si l'automate Input"
-      << " est déterministe" << endl;
-  out << "-aut2expr ou automate2expressionrationnelle Input :\n\t calcule "
-      << "l'expression rationnelle correspondant à l'automate Input et "
-      << "l'affiche sur la sortie standard" << endl;
-  out << "-expr2aut ou expressionrationnelle2automate ExpressionRationnelle "
-      << "Output [-g] :\n\t calcule l'automate correspondant à "
-      << "ExpressionRationnelle, écrit l'automate résultant dans Output"
-      << endl;
-  out << "-equ ou -equivalent Input1 Intput2 :\n\t détermine si les deux "
-      << "automates Input1 et Input2 sont équivalents" << endl;
-  out << "-nop ou -no_operation Input Output [-g] :\n\t ne fait rien de "
-      << "particulier, recopie l'entrée dans Output" << endl;
+  out << "-acc ou -accept Input Word :\n\t détermine si le mot Word est ";
+  out << "accepté par l'automate Input" << endl;
+  out << "-det ou -determinize Input Output [-g] :\n\t déterminise l'automate ";
+  out << "Input, écrit le résultat dans Output" << endl;
+  out << "-isdet ou -is_deterministic Input :\n\t détermine si l'automate ";
+  out << "Input est déterministe" << endl;
+  out << "-aut2expr ou automate2expressionrationnelle Input :\n\t calcule ";
+  out << "l'expression rationnelle correspondant à l'automate Input et ";
+  out << "l'affiche sur la sortie standard" << endl;
+  out << "-expr2aut ou expressionrationnelle2automate ExpressionRationnelle ";
+  out << "Output [-g] :\n\t calcule l'automate correspondant à ";
+  out << "ExpressionRationnelle, écrit l'automate résultant dans Output";
+  out << endl;
+  out << "-equ ou -equivalent Input1 Intput2 :\n\t détermine si les deux ";
+  out << "automates Input1 et Input2 sont équivalents" << endl;
+  out << "-nop ou -no_operation Input Output [-g] :\n\t ne fait rien de ";
+  out << "particulier, recopie l'entrée dans Output" << endl;
 
   out << "Exemple '" << s << " -determinize auto.txt resultat -g" << endl;
 }
@@ -576,10 +605,21 @@ int main(int argc, char* argv[] )
 
   // options acceptées
   const size_t NBOPT = 8;
-  string aLN[] = {"accept", "determinize", "is_terministic",
-    "automate2expressionrationnelle", "expressionrationnelle2automate",
-    "equivalent", "no_operation", "graph"};
-  string aSN[] = {"acc", "det", "isdet", "aut2expr", "expr2aut", "equ", "nop",
+  string aLN[] = {"accept",
+    "determinize",
+    "is_terministic",
+    "automate2expressionrationnelle",
+    "expressionrationnelle2automate",
+    "equivalent",
+    "no_operation",
+    "graph"};
+  string aSN[] = {"acc",
+    "det",
+    "isdet",
+    "aut2expr",
+    "expr2aut",
+    "equ",
+    "nop",
     "g"};
 
   // on essaie de "parser" chaque option de la ligne de commande
@@ -619,7 +659,7 @@ int main(int argc, char* argv[] )
         case 6: //nop
           if (argc < i + 3)
           {
-            cerr << "pas assez d'arguments" << endl;
+            cerr << "il manque des arguments." << endl;
             return EXIT_FAILURE;
           }
           break;
@@ -627,7 +667,7 @@ int main(int argc, char* argv[] )
         case 3: //aut2expr
           if (argc < i + 2)
           {
-            cerr << "pas assez d'arguments" << endl;
+            cerr << "il manque des arguments." << endl;
             return EXIT_FAILURE;
           }
           break;
@@ -691,7 +731,7 @@ int main(int argc, char* argv[] )
     {
       if(act > -1)
       {
-        cerr << "Plusieurs actions spécififées" << endl;
+        cerr << "Plusieurs actions spécifiées" << endl;
         return EXIT_FAILURE;
       }
       else
@@ -703,7 +743,7 @@ int main(int argc, char* argv[] )
 
   if (act == -1)
   {
-    cerr << "Pas d'action spécififée" << endl;
+    cerr << "Pas d'action spécifiée" << endl;
     return EXIT_FAILURE;
   }
 

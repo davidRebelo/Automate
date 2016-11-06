@@ -31,20 +31,11 @@ Commentaires
 Make cleanparser fonctionne mais il est impossible de recréer les fichiers
 binaires ensuite donc l'option est commenté dans le Makefile.
 
-On a de nombreux avertissements de la forme suivante :
- * ndet.cpp:125:6: warning: unused parameter ‘at’ [-Wunused-parameter]
+J'ai pris le soin de faire quelques modifications mineur sur le code fournis
+afin de l'adapter à une norme de programmation que j'applique quand je code. Il
+est possible qu'il reste des bout de code fournis qui n'ont pas été toucher par
+non vigilance de ma par. Les modifications sont notamment 80 colonnes maximum par
+ligne, un espace avant et après un opérateur et le & ou * collé à la variable.
 
-C'est normal car le corps des fonctions sont encore vides, on a pour l'instant
-qu'un simple retour d'une valeur par défaut. Les avertissements disparaîtront
-naturellement quand la fonction sera complètement définie. Les corps à compléter
-sont remarquable par le // TODO qu'ils contiennent.
-
-Le présent exemple est donné en C++. Les étudiants préférant le C99 devront
-porter les modifications afférentes au Makefile et au code quant
- - aux structures de données dans les typedefs (int * au lieu de vector<int>);
- - aux chaînes de caractères (char * au lieu de string);
- - aux entrées/sorties (printf() au lieu de <<, etc.).
-
-Cet exemple d'archive est fournie aux étudiants de l'UE LIF15 2016-2017 A TITRE
-D'EXEMPLE afin d'illustrer ce qui est demandé et de faciliter l'exécution du
-travail.
+J'ai également pris la liberté de créer un autre type similaire à epsilon_t
+mais pour les autres symbole qu'epsilon.
