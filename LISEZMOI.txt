@@ -38,4 +38,6 @@ non vigilance de ma par. Les modifications sont notamment 80 colonnes maximum pa
 ligne, un espace avant et après un opérateur et le & ou * collé à la variable.
 
 J'ai également pris la liberté de créer un autre type similaire à epsilon_t
-mais pour les autres symbole qu'epsilon.
+mais pour les autres symbole qu'epsilon ainsi que de vérifié le nombre
+d'argument attendu dans les arguments car j'ai rencontré un segfault car j'ai
+oublié d'indiquer la sortie.
