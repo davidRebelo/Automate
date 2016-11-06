@@ -27,7 +27,8 @@ const bool         DEBUG = false;
 typedef size_t                            etat_t;
 typedef unsigned char                     symb_t;
 typedef set< etat_t >                     etatset_t;
-typedef vector< vector< etatset_t > >     trans_t;
+typedef vector< etatset_t >               transdest_t;
+typedef vector< transdest_t >             trans_t;
 typedef vector< etatset_t >               epsilon_t;
 typedef map< etatset_t, etat_t >          map_t;
 
@@ -81,7 +82,7 @@ bool FromFile(sAutoNDE &at, string path)
     } while (line.empty() || line[0] == '#');
     // on autorise les lignes de commentaires : celles qui commencent par '#'
     iss.str(line);
-    if ((iss >> at.nb_etats).fail() || (iss >> at.nb_symbs).fail() || \
+    if ((iss >> at.nb_etats).fail() || (iss >> at.nb_symbs).fail() ||
         (iss >> at.nb_finaux).fail())
     {
       return false;
@@ -137,7 +138,7 @@ bool FromFile(sAutoNDE &at, string path)
       iss.str(line);
 
       // si une des trois lectures echoue, on passe à la suite
-      if ((iss >> s).fail() || (iss >> a).fail() || (iss >> t).fail() || \
+      if ((iss >> s).fail() || (iss >> a).fail() || (iss >> t).fail() ||
           (a < ASCII_A ) || (a > ASCII_Z ))
       {
         continue;
@@ -188,26 +189,6 @@ bool EstDeterministe(const sAutoNDE &at)
   }
 
   return true;
-  // int x = 0;
-  // for(epsilon_t::const_iterator it = epsilon_clot.begin(); it != epsilon_clot.end(); it++)
-  // {
-  //   x++;
-  //   if (!(it->size() == 0) && !(it->size() == it->count(x)))
-  //   {
-  //     return false;
-  //   }
-  // }
-  // for (trans_t::const_iterator i = trans.begin(); i != trans.end(); i++)
-  // {
-  //   for (vector<etatset_t>::const_iterator j = (*i).begin(); j != (*i).end(); j++)
-  //   {
-  //     if((*j).size() > 1)
-  //     {
-  //       return false;
-  //     }
-  //   }
-  // }
-  // return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -216,15 +197,20 @@ void Fermeture(const sAutoNDE &at, etatset_t &e)
 {
   // Cette fonction clot l'ensemble d'états E={e_0, e_1, ... ,e_n} passé en
   // paramètre avec les epsilon transitions
+  etatset_t f;
   etatset_t::const_iterator it, it2;
 
-  for (it = e.begin(); it != e.end(); it++)
+  do
   {
-    for (it2 = at.epsilon[*it].begin(); it2 != at.epsilon[*it].end(); it2++)
+    f = e;
+    for (it = f.begin(); it != f.end(); it++)
     {
-      e.insert(*it2);
+      for (it2 = at.epsilon[*it].begin(); it2 != at.epsilon[*it].end(); it2++)
+      {
+        e.insert(*it2);
+      }
     }
-  }
+  } while (e.size() != f.size());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -236,10 +222,7 @@ etatset_t Delta(const sAutoNDE &at, const etatset_t &e, symb_t c)
   etatset_t res, tmp;
   etatset_t::const_iterator it, it2;
 
-  for (it = e.begin(); it != e.end(); it++)
-  {
-    tmp.insert(*it);
-  }
+  tmp = e;
   Fermeture(at, tmp);
 
   for (it = tmp.begin(); it != tmp.end(); it++)
@@ -256,29 +239,150 @@ etatset_t Delta(const sAutoNDE &at, const etatset_t &e, symb_t c)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool Accept(const sAutoNDE &at, string str)
-{
-  //TODO définir cette fonction
-
-  return false;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 sAutoNDE Determinize(const sAutoNDE &at)
 {
   sAutoNDE r;
+  symb_t c;
+  map_t combstate;
+  queue< etat_t > q;
+  etat_t current;
+  map_t::const_iterator mit;
+  etatset_t::const_iterator sit;
+  etatset_t seen;
 
-  //TODO définir cette fonction
+  if (EstDeterministe(at))
+  {
+    return at;
+  }
+
+  r.nb_etats = 0;
+  r.nb_symbs = at.nb_symbs;
+  r.nb_finaux = 0;
+  r.initial = 0;
+
+  // créer l'état initial deterministe.
+  r.nb_etats++;
+  r.trans.resize(r.nb_etats);
+  r.trans[r.initial].resize(r.nb_symbs);
+  combstate[{at.initial}] = r.initial;
+
+  q.push(at.initial);
+  seen.insert(at.initial);
+  while (!q.empty())
+  {
+    current = q.front();
+    q.pop();
+    for (c = ASCII_A; c < ASCII_A + r.nb_symbs; c++)
+    {
+      // récupère l'ensemble des états nondet accessible par le symbole c à
+      // partir de current.
+      etatset_t tmp;
+      tmp.insert(current);
+      tmp = Delta(at, tmp, c);
+      if (tmp.empty())
+      {
+        continue;
+      }
+      // créer un nouvel état et met à jour la correspondence entre les
+      // combinaison d'états nondet vers un état det.
+      if (combstate.find(tmp) == combstate.end())
+      {
+        r.nb_etats++;
+        r.trans.resize(r.nb_etats);
+        r.trans[r.nb_etats - 1].resize(r.nb_symbs);
+        combstate[tmp] = r.nb_etats - 1;
+      }
+      // ajoute la transition pour le symbole c pour tous les etats qui
+      // correspondent à une combinaison de current.
+      for (mit = combstate.begin(); mit != combstate.end(); ++mit)
+      {
+        if (mit->first.find(current) != mit->first.end())
+        {
+          r.trans[mit->second][c - ASCII_A].insert(combstate[tmp]);
+        }
+      }
+      // on va traiter tous les états atteignables par current.
+      for (sit = tmp.begin(); sit != tmp.end(); ++sit)
+      {
+        if (seen.find(*sit) == seen.end())
+        {
+          q.push(*sit);
+          seen.insert(*sit);
+        }
+      }
+    }
+    // ajoute les états finaux.
+    if (at.finaux.find(current) != at.finaux.end())
+    {
+      for (mit = combstate.begin(); mit != combstate.end(); ++mit)
+      {
+        if (mit->first.find(current) != mit->first.end())
+        {
+          r.finaux.insert(mit->second);
+        }
+      }
+    }
+  }
+
+  r.nb_finaux = r.finaux.size();
 
   return r;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
+bool Accept(const sAutoNDE &at, string str)
+{
+  sAutoNDE r;
+  string::const_iterator it;
+  etat_t current;
+
+  r = Determinize(at);
+
+  current = r.initial;
+  for (it = str.begin(); it != str.end(); ++it)
+  {
+    if ((symb_t)*it < ASCII_A || (symb_t)*it >= ASCII_A + r.nb_symbs)
+    {
+      return false;
+    }
+    etatset_t &tmp = r.trans[current][*it - ASCII_A];
+    assert(tmp.size() <= 1);
+    if (tmp.size() != 1)
+    {
+      return false;
+    }
+    current = *tmp.begin();
+  }
+
+  return r.finaux.find(current) != r.finaux.end();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 ostream &operator<<(ostream &out, const sAutoNDE &at)
 {
-  //TODO définir cette fonction
+  etatset_t::const_iterator sit;
+  unsigned int it, it2;
+
+  out << at.nb_etats << " " << at.nb_symbs << " " << at.nb_finaux << endl;
+  out << at.initial << endl;
+  for (sit = at.finaux.begin(); sit != at.finaux.end(); ++sit)
+  {
+    out << *sit << endl;
+  }
+  for (it = 0; it < at.nb_etats; it++)
+  {
+    for (it2 = 0; it2 < at.nb_symbs; it2++)
+    {
+      for (sit = at.trans[it][it2].begin();
+          sit != at.trans[it][it2].end();
+          ++sit)
+      {
+        out << it << " " << (char)(it2 + ASCII_A) << " " << *sit << endl;
+      }
+    }
+  }
 
   return out;
 }
@@ -287,9 +391,31 @@ ostream &operator<<(ostream &out, const sAutoNDE &at)
 
 bool ToGraph(sAutoNDE &at, string path)
 {
-  //TODO définir cette fonction
+  etatset_t::const_iterator sit;
+  unsigned int it, it2;
+  ofstream out(path.c_str(), ios::out);
+  out << "digraph finite_state_machine {\n\trankdir=LR;\n\tsize=\"10,10\"\n\n\tnode [shape = doublecircle]; ";
+  for (sit = at.finaux.begin(); sit != at.finaux.end(); ++sit)
+  {
+    out << *sit << " ";
+  }
+  out << ";\n\tnode [shape = point ]; q;\n\tnode [shape = circle];\n\n\tq -> ";
+  out << at.initial << ";" << endl;
+  for (it = 0; it < at.nb_etats; it++)
+  {
+    for (it2 = 0; it2 < at.nb_symbs; it2++)
+    {
+      for (sit = at.trans[it][it2].begin();
+          sit != at.trans[it][it2].end();
+          ++sit)
+      {
+        out << "\t" << it << " -> " << *sit << " [label = \"" << (char)(it2 + ASCII_A) << "\"];" << endl;
+      }
+    }
+  }
 
-  return false;
+  out << "\n}" << endl;
+  return true;
 }
 
 
@@ -450,14 +576,14 @@ int main(int argc, char* argv[] )
 
   // options acceptées
   const size_t NBOPT = 8;
-  string aLN[] = {"accept", "determinize", "is_terministic",\
-    "automate2expressionrationnelle", "expressionrationnelle2automate",\
+  string aLN[] = {"accept", "determinize", "is_terministic",
+    "automate2expressionrationnelle", "expressionrationnelle2automate",
     "equivalent", "no_operation", "graph"};
-  string aSN[] = {"acc", "det", "isdet", "aut2expr", "expr2aut", "equ", "nop", \
+  string aSN[] = {"acc", "det", "isdet", "aut2expr", "expr2aut", "equ", "nop",
     "g"};
 
   // on essaie de "parser" chaque option de la ligne de commande
-  for (int i=1; i<argc; ++i)
+  for (int i = 1; i < argc; ++i)
   {
     if (DEBUG)
     {
@@ -483,6 +609,28 @@ int main(int argc, char* argv[] )
       if (DEBUG)
       {
         cerr << "Key found (" << pos << ") : " << str << endl;
+      }
+      switch (pos)
+      {
+        case 0: //acc
+        case 1: //det
+        case 4: //expr2aut
+        case 5: //equ
+        case 6: //nop
+          if (argc < i + 3)
+          {
+            cerr << "pas assez d'arguments" << endl;
+            return EXIT_FAILURE;
+          }
+          break;
+        case 2: //isdet
+        case 3: //aut2expr
+          if (argc < i + 2)
+          {
+            cerr << "pas assez d'arguments" << endl;
+            return EXIT_FAILURE;
+          }
+          break;
       }
       switch (pos)
       {
