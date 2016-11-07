@@ -34,7 +34,8 @@ typedef map< etatset_t, etat_t >          map_t;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-struct sAutoNDE{
+struct sAutoNDE
+{
   // caractéristiques
   size_t nb_etats;
   size_t nb_symbs;
@@ -359,11 +360,11 @@ bool Accept(const sAutoNDE &at, string str)
     {
       return false;
     }
-    etatset_t &tmp = r.trans[current][*it - ASCII_A];
-    assert(tmp.size() <= 1);
     // s'il n'existe pas de transition depuis l'état courant avec le symbole
     // courant, il ne peut pas y avoir plus d'une transition car on a
     // déterminiser l'automate.
+    etatset_t &tmp = r.trans[current][*it - ASCII_A];
+    assert(tmp.size() <= 1);
     if (tmp.size() != 1)
     {
       return false;
@@ -414,21 +415,26 @@ bool ToGraph(sAutoNDE &at, string path)
   etatset_t::const_iterator sit;
   unsigned int it, it2;
   ofstream out(path.c_str(), ios::out);
+  if(!out){ //verification s'il a bien ete ouvert
+      return false;
+  }
   out << "digraph finite_state_machine {" << endl;
   out << "\trankdir=LR;" << endl;
   out << "\tsize=\"10,10\"" << endl << endl;
+  // tous les états finaux représenté par des double cercle.
   out << "\tnode [shape = doublecircle]; ";
-  // tous les états finaux
   for (sit = at.finaux.begin(); sit != at.finaux.end(); ++sit)
   {
     out << *sit << " ";
   }
   out << ";" << endl;
+  // l'etat initiale representé par un point et une fleche.
   out << "\tnode [shape = point ]; q;" << endl;
+  // les etats sont representé par des cercles
   out << "\tnode [shape = circle];" << endl << endl;
   out << "\tq -> " << at.initial << ";" << endl;
   // <état départ> -> <état final> [label = "<char>"];
-  // toutes les transitions
+  // toutes les transitions non spontanée
   for (it = 0; it < at.nb_etats; it++)
   {
     for (it2 = 0; it2 < at.nb_symbs; it2++)
@@ -443,7 +449,21 @@ bool ToGraph(sAutoNDE &at, string path)
     }
   }
 
-  out << "\n}" << endl;
+  out << endl;
+
+  for (it = 0; it < at.nb_etats; it++)
+  {
+    if (at.epsilon[it].size() > 0)
+    {
+      for (sit = at.epsilon[it].begin();
+          sit != at.trans[it].end();
+          ++sit)
+      {
+        out << "\t" << it << " -> " << *sit;
+        out << " [label = \"ε\"];" << endl;
+      }
+
+  out << endl << "}" << endl;
   return true;
 }
 

@@ -1,7 +1,8 @@
 Rendu du projet LIF15 2016-2017
 ===============================
 
-PITA	Kevin	1140783
+PITA	Kevin	11407833
+REBELO	David	11511524
 
 Langage C++
 
@@ -31,13 +32,14 @@ Commentaires
 Make cleanparser fonctionne mais il est impossible de recréer les fichiers
 binaires ensuite donc l'option est commenté dans le Makefile.
 
-J'ai pris le soin de faire quelques modifications mineur sur le code fournis
-afin de l'adapter à une norme de programmation que j'applique quand je code. Il
-est possible qu'il reste des bout de code fournis qui n'ont pas été toucher par
-non vigilance de ma par. Les modifications sont notamment 80 colonnes maximum par
-ligne, un espace avant et après un opérateur et le & ou * collé à la variable.
+Nous avons pris le soin de faire quelques modifications mineur sur le code
+fournis afin de l'adapter à une norme de programmation que j'applique quand je
+code. Il est possible qu'il reste des bout de code fournis qui n'ont pas été
+toucher par manque de vigilance. Les modifications sont notamment 80 colonnes
+maximum par ligne, un espace avant et après un opérateur et le & ou * collé à la
+variable.
 
-J'ai également pris la liberté de créer un autre type similaire à epsilon_t
-mais pour les autres symbole qu'epsilon ainsi que de vérifié le nombre
+Nous avons également pris la liberté de créer un autre type similaire à
+epsilon_t mais pour les autres symbole qu'epsilon ainsi que de vérifié le nombre
 d'argument attendu dans les arguments car j'ai rencontré un segfault car j'ai
 oublié d'indiquer la sortie.
