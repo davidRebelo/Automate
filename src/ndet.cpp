@@ -301,6 +301,7 @@ sAutoNDE Determinize(const sAutoNDE &at)
       {
         r.nb_etats++;
         r.trans.resize(r.nb_etats);
+        r.epsilon.resize(r.nb_etats);
         r.trans[r.nb_etats - 1].resize(r.nb_symbs);
         combstate[tmp] = r.nb_etats - 1;
       }
