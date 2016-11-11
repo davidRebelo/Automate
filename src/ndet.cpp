@@ -447,19 +447,13 @@ bool ToGraph(sAutoNDE &at, string path)
         out << "\t" << it << " -> " << *sit;
         out << " [label = \"" << (char)(it2 + ASCII_A) << "\"];" << endl;
       }
-    }
-  }
-
-  out << endl;
-
-  for (it = 0; it < at.epsilon.size(); it++)
-  {
-    for (sit = at.epsilon[it].begin();
-        sit != at.epsilon[it].end();
-        ++sit)
-    {
-      out << "\t" << it << " -> " << *sit;
-      out << " [label = \"ε\"];" << endl;
+      for (sit = at.epsilon[it].begin();
+          sit != at.epsilon[it].end();
+          ++sit)
+      {
+        out << "\t" << it << " -> " << *sit;
+        out << " [label = \"ε\"];" << endl;
+      }
     }
   }
 
