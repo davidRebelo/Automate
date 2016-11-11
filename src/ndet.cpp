@@ -245,6 +245,7 @@ etatset_t Delta(const sAutoNDE &at, const etatset_t &e, symb_t c)
     }
   }
 
+  Fermeture(at, res);
   return res;
 }
 
