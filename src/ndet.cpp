@@ -250,16 +250,28 @@ etatset_t Delta(const sAutoNDE &at, const etatset_t &e, symb_t c)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+template < class T >
+bool setHasIntersection(const set< T > &s1, const set< T > &s2)
+{
+  vector< T > in(s1.size());
+  typename vector< T >::iterator it;
+
+  it = set_intersection(s1.begin(), s1.end(), s2.begin(), s2.end(), in.begin());
+  return (it != in.begin());
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 sAutoNDE Determinize(const sAutoNDE &at)
 {
   sAutoNDE r;
   symb_t c;
   map_t combstate;
+  vector< etatset_t > statecomb;
   queue< etat_t > q;
   etat_t current;
   map_t::const_iterator mit;
   etatset_t::const_iterator sit;
-  etatset_t seen;
 
   // cas simple, s'il est déjà déterministe, on le renvoie tel quel
   if (EstDeterministe(at))
@@ -276,10 +288,16 @@ sAutoNDE Determinize(const sAutoNDE &at)
   r.nb_etats++;
   r.trans.resize(r.nb_etats);
   r.trans[r.initial].resize(r.nb_symbs);
-  combstate[{at.initial}] = r.initial;
+  statecomb.resize(r.nb_etats);
+  statecomb[r.initial].insert(at.initial);
+  combstate[statecomb[r.initial]] = r.initial;
 
-  q.push(at.initial);
-  seen.insert(at.initial);
+  if (at.finaux.find(at.initial) != at.finaux.end())
+  {
+    r.finaux.insert(r.initial);
+  }
+
+  q.push(r.initial);
   while (!q.empty())
   {
     current = q.front();
@@ -288,9 +306,7 @@ sAutoNDE Determinize(const sAutoNDE &at)
     {
       // récupère l'ensemble des états nondet accessible par le symbole c à
       // partir de current.
-      etatset_t tmp;
-      tmp.insert(current);
-      tmp = Delta(at, tmp, c);
+      etatset_t tmp = Delta(at, statecomb[current], c);
       if (tmp.empty())
       {
         continue;
@@ -299,41 +315,27 @@ sAutoNDE Determinize(const sAutoNDE &at)
       // combinaison d'états nondet vers un état det.
       if (combstate.find(tmp) == combstate.end())
       {
-        r.nb_etats++;
+        etat_t newstate = r.nb_etats++;
         r.trans.resize(r.nb_etats);
         r.epsilon.resize(r.nb_etats);
-        r.trans[r.nb_etats - 1].resize(r.nb_symbs);
-        combstate[tmp] = r.nb_etats - 1;
-      }
-      // ajoute la transition pour le symbole c pour tous les états qui
-      // correspondent à une combinaison de current.
-      for (mit = combstate.begin(); mit != combstate.end(); ++mit)
-      {
-        if (mit->first.find(current) != mit->first.end())
+        r.trans[newstate].resize(r.nb_symbs);
+
+        statecomb.resize(r.nb_etats);
+        statecomb[newstate] = tmp;
+        combstate[tmp] = newstate;
+
+        // Il faudra ajouter toutes les transitions qui partent de ce nouvel
+        // état.
+        q.push(newstate);
+
+        // Ce nouvel état est final si l'un des états de l'automate
+        // non-déterministe auxquels il correspond est final.
+        if (setHasIntersection(at.finaux, tmp))
         {
-          r.trans[mit->second][c - ASCII_A].insert(combstate[tmp]);
+          r.finaux.insert(newstate);
         }
       }
-      // on va traiter tous les états atteignables par current.
-      for (sit = tmp.begin(); sit != tmp.end(); ++sit)
-      {
-        if (seen.find(*sit) == seen.end())
-        {
-          q.push(*sit);
-          seen.insert(*sit);
-        }
-      }
-    }
-    // ajoute les états finaux.
-    if (at.finaux.find(current) != at.finaux.end())
-    {
-      for (mit = combstate.begin(); mit != combstate.end(); ++mit)
-      {
-        if (mit->first.find(current) != mit->first.end())
-        {
-          r.finaux.insert(mit->second);
-        }
-      }
+      r.trans[current][c - ASCII_A].insert(combstate[tmp]);
     }
   }
 
