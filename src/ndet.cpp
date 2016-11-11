@@ -291,14 +291,16 @@ sAutoNDE Determinize(const sAutoNDE &at)
   r.trans[r.initial].resize(r.nb_symbs);
   statecomb.resize(r.nb_etats);
   statecomb[r.initial].insert(at.initial);
+  Fermeture(at, statecomb[r.initial]);
   combstate[statecomb[r.initial]] = r.initial;
 
-  if (at.finaux.find(at.initial) != at.finaux.end())
+  if (setHasIntersection(at.finaux, statecomb[r.initial]))
   {
     r.finaux.insert(r.initial);
   }
 
   q.push(r.initial);
+
   while (!q.empty())
   {
     current = q.front();
