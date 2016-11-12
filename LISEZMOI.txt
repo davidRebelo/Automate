@@ -43,3 +43,7 @@ Nous avons également pris la liberté de créer un autre type similaire à
 epsilon_t mais pour les autres symbole qu'epsilon ainsi que de vérifié le nombre
 d'argument attendu dans les arguments car j'ai rencontré un segfault car j'ai
 oublié d'indiquer la sortie.
+
+Nous avons également créer une fonction setHasIntersection qui permet de
+vérifier si les deux ensemble d'états fournis en paramètre contiennent les mêmes
+éléments.

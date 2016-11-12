@@ -254,8 +254,9 @@ etatset_t Delta(const sAutoNDE &at, const etatset_t &e, symb_t c)
 bool setHasIntersection(const etatset_t &s1, const etatset_t &s2)
 {
   vector< etat_t > in(s1.size());
-  typename vector< etat_t >::iterator it;
+  vector< etat_t >::iterator it;
 
+  // compare deux ensemble d'états
   it = set_intersection(s1.begin(), s1.end(), s2.begin(), s2.end(), in.begin());
   return (it != in.begin());
 }
@@ -293,6 +294,7 @@ sAutoNDE Determinize(const sAutoNDE &at)
   Fermeture(at, statecomb[r.initial]);
   combstate[statecomb[r.initial]] = r.initial;
 
+  // compare les deux ensemble d'état
   if (setHasIntersection(at.finaux, statecomb[r.initial]))
   {
     r.finaux.insert(r.initial);
