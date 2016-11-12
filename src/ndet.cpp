@@ -251,11 +251,10 @@ etatset_t Delta(const sAutoNDE &at, const etatset_t &e, symb_t c)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-template < class T >
-bool setHasIntersection(const set< T > &s1, const set< T > &s2)
+bool setHasIntersection(const etatset_t &s1, const etatset_t &s2)
 {
-  vector< T > in(s1.size());
-  typename vector< T >::iterator it;
+  vector< etat_t > in(s1.size());
+  typename vector< etat_t >::iterator it;
 
   it = set_intersection(s1.begin(), s1.end(), s2.begin(), s2.end(), in.begin());
   return (it != in.begin());
