@@ -213,9 +213,9 @@ void Fermeture(const sAutoNDE &at, etatset_t &e)
   do
   {
     f = e;
-    for (it = f.begin(); it != f.end(); it++)
+    for (it = f.begin(); it != f.end(); it++)// (etatst_t it : f)
     {
-      for (it2 = at.epsilon[*it].begin(); it2 != at.epsilon[*it].end(); it2++)
+      for (it2 = at.epsilon[*it].begin(); it2 != at.epsilon[*it].end(); it2++)// (etat_t it2 : at.epsilon[it2])
       {
         e.insert(*it2);
       }
@@ -480,7 +480,77 @@ sAutoNDE Append(const sAutoNDE &x, const sAutoNDE &y)
   assert(x.nb_symbs == y.nb_symbs);
   sAutoNDE r;
 
-  //TODO définir cette fonction
+  // etatset_t::const_iterator it;
+  // unsigned int i, j;
+
+  // r.nb_etats=x.nb_etats + y.nb_etats;
+  // r.nb_symbs=x.nb_symbs;
+  // r.nb_finaux=x.nb_finaux + y.nb_finaux;
+
+  // // on redéfinis la taille des tableaux
+  // r.epsilon.resize(r.nb_etats);
+  // r.trans.resize(r.nb_etats);
+  // for(i=0; i<r.nb_etats; ++i)
+  //   r.trans[i].resize(r.nb_symbs);
+
+  // // on décale les transitions de l'automate y
+
+  // // on ajoute les transitions de x et y
+  // for(i=0; i<r.nb_etats; i++){
+  //   if (i<x.nb_etats){
+  //     r.epsilon[i]=x.epsilon[i];
+  //     r.trans[i]=x.trans[i];
+  //   }else{
+  //     for(it=y.epsilon[i-x.nb_etats].begin(); it!=y.epsilon[i-x.nb_etats].end(); it ++)
+  //       r.epsilon[i].insert(x.nb_etats + (*it));
+  //     for(j=0; j < y.trans[i-x.nb_etats].size(); j++)
+  //       for(it=y.trans[i-x.nb_etats][j].begin(); it!=y.trans[i-x.nb_etats][j].end(); it ++)
+  //         r.trans[i][j].insert(x.nb_etats + (*it));
+  //   }
+  // }
+
+
+  // // on ajoute les états finaux
+  // for(it=x.finaux.begin(); it!=x.finaux.end(); it ++)
+  //   r.finaux.insert(*it);
+  // for(it=y.finaux.begin(); it!=y.finaux.end(); it ++)
+  //   r.finaux.insert(x.nb_etats+ (*it));
+
+  // r.epsilon.resize(r.nb_etats);
+  // r.trans.resize(r.nb_etats);
+  // for(i=0; i< r.trans.size(); i++)
+  //   r.trans[i].resize(r.nb_symbs);
+
+  //TODO
+  size_t i;
+  unsigned int j;
+  etatset_t etats;
+
+  r.nb_symbs = x.nb_symbs;
+  r.epsilon.resize(x.nb_etats + y.nb_etats);
+  r.trans.resize(x.nb_etats + y.nb_etats);
+
+  for(i = 0; i < x.nb_etats + y.nb_etats; i++) {
+    r.trans[i].resize(r.nb_symbs);
+  }
+
+  for(i = 0; i < x.nb_etats; i++) {
+    for(j = ASCII_A; j < ASCII_A + r.nb_symbs; j++) {
+      etats = x.trans[i][j];
+      r.trans[i][j].insert(etats.begin(), etats.end());
+    }
+    etats = x.epsilon[i];
+    r.epsilon[i].insert(etats.begin(), etats.end());
+  }
+
+  for(i = 0; i < y.nb_etats; i++) {
+    for(j = ASCII_A; j < ASCII_A + r.nb_symbs; j++) {
+      etats = y.trans[i][j];
+      r.trans[i + x.nb_etats][j].insert(etats.begin(), etats.end());
+    }
+    etats = y.epsilon[i];
+    r.epsilon[i + x.nb_etats].insert(etats.begin(), etats.end());
+  }
 
   return r;
 }
@@ -505,6 +575,19 @@ sAutoNDE Concat(const sAutoNDE &x, const sAutoNDE &y)
   sAutoNDE r = Append(x, y);
 
   //TODO définir cette fonction
+  etatset_t::const_iterator it;
+  unsigned int i;
+
+  r.initial=x.initial;
+  for (it=x.finaux.begin(); it!=x.finaux.end(); it ++){
+    r.epsilon[(*it)].insert(y.initial + x.nb_etats);
+    r.finaux.erase(*it);
+  }
+
+  r.epsilon.resize(r.nb_etats);
+  r.trans.resize(r.nb_etats);
+  for(i=0; i< r.trans.size(); i++)
+    r.trans[i].resize(r.nb_symbs);
 
   return r;
 }
@@ -514,6 +597,22 @@ sAutoNDE Concat(const sAutoNDE &x, const sAutoNDE &y)
 sAutoNDE Complement(const sAutoNDE &x)
 {
   //TODO définir cette fonction
+  sAutoNDE r=x;
+  etatset_t finaux_tmp;
+  etatset_t::iterator it;
+  unsigned int i;
+  bool est_final;
+
+  for (i=0; i<r.nb_etats; i++){
+    est_final=false;
+    for(it=r.finaux.begin(); it!=r.finaux.end(); it ++)
+      if ((*it) == i)
+        est_final=true;
+    if(!est_final)
+      finaux_tmp.insert(i);
+  }
+  r.finaux=finaux_tmp;
+  r.nb_finaux=r.finaux.size();
 
   return x;
 }
@@ -524,7 +623,39 @@ sAutoNDE Kleene(const sAutoNDE &x)
 {
   //TODO définir cette fonction
 
-  return x;
+  // return x;
+  sAutoNDE tmp;
+
+  etatset_t::const_iterator it;
+  unsigned int i;
+
+  tmp.nb_etats=x.nb_etats;
+  tmp.nb_symbs=x.nb_symbs;
+  tmp.nb_finaux=x.nb_finaux;
+
+  tmp.initial=x.initial;
+  tmp.finaux=x.finaux;
+  tmp.trans=x.trans;
+  tmp.epsilon=x.epsilon;
+
+  for(it=tmp.finaux.begin(); it!=tmp.finaux.end(); it++)
+    tmp.epsilon.at(*it).insert(tmp.initial);
+
+  tmp.nb_etats++;
+  tmp.epsilon.resize(tmp.nb_etats);
+
+  tmp.epsilon[x.nb_etats].insert(tmp.initial);
+
+  tmp.initial=tmp.nb_etats-1;
+  tmp.finaux.insert(tmp.initial);
+
+  tmp.epsilon.resize(tmp.nb_etats);
+  tmp.trans.resize(tmp.nb_etats);
+  for(i=0; i< tmp.trans.size(); i++) {
+    tmp.trans[i].resize(tmp.nb_symbs);
+  }
+
+  return tmp;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -533,7 +664,11 @@ sAutoNDE Intersection(const sAutoNDE &x, const sAutoNDE &y)
 {
   //TODO définir cette fonction
 
-  return x;
+  // return x;
+  sAutoNDE a=Complement(x);
+  sAutoNDE b=Complement(y);
+  sAutoNDE r=Union(a, b);
+  return Complement(r);
 
 }
 
