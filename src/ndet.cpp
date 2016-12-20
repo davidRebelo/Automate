@@ -588,8 +588,7 @@ sAutoNDE Union(const sAutoNDE &x, const sAutoNDE &y)
   r.nb_finaux=x.nb_finaux;
   r.finaux=x.finaux;
   //on rajoute les etats finaux de y
-  for(set<size_t>::iterator itrr=y.finaux.begin();itrr!=y.finaux.end();itrr++)
-  {
+  for(set<size_t>::iterator itrr=y.finaux.begin();itrr!=y.finaux.end();itrr++){
       r.nb_finaux++;
       r.finaux.insert(*itrr+x.nb_etats);
   }
@@ -704,6 +703,65 @@ sAutoNDE Intersection(const sAutoNDE &x, const sAutoNDE &y)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+sAutoNDE ExpressionRationnelle2AutomateAux(sExpressionRationnelle er){
+    sAutoNDE r, aux1, aux2;
+    char c;
+    int i, nb_max_symb;
+
+    switch(er->op) {
+        case o_variable: {
+	        c = (er->nom->at(0)) - ASCII_A;
+	        r.nb_symbs = c+1;
+	        r.initial = 0;
+	        r.nb_etats = 2;
+	        r.finaux.insert(1);
+
+	        r.trans.resize(r.nb_etats);
+	        r.epsilon.resize(r.nb_etats);
+	        for (i=0; i < r.nb_etats; ++i){
+                r.trans[i].resize(r.nb_symbs);
+	        }
+
+	        if (c == 'e'){ // transition epsilon
+		        r.epsilon[r.initial].insert(1);
+	        }
+	        else{ // transition normale
+		        r.trans[r.initial][c].insert(1);
+	        }
+
+	        break;
+        }
+        case o_ou: {
+            aux1=ExpressionRationnelle2AutomateAux(er->arg1);
+            aux2=ExpressionRationnelle2AutomateAux(er->arg2);
+            if(aux1.nb_symbs != aux2.nb_symbs){
+                nb_max_symb = max(aux1.nb_symbs, aux2.nb_symbs);
+                aux1.nb_symbs = nb_max_symb;
+                aux2.nb_symbs = nb_max_symb;
+            }
+	        r = Union(aux1, aux2);
+	        break;
+        }
+        case o_concat: {
+            aux1=ExpressionRationnelle2AutomateAux(er->arg1);
+            aux2=ExpressionRationnelle2AutomateAux(er->arg2);
+            if(aux1.nb_symbs != aux2.nb_symbs){
+                nb_max_symb = max(aux1.nb_symbs, aux2.nb_symbs);
+                aux1.nb_symbs = nb_max_symb;
+                aux2.nb_symbs = nb_max_symb;
+            }
+	        r = Concat(aux1, aux2);
+	        break;
+        }
+        case o_etoile: {
+	        r = Kleene(ExpressionRationnelle2AutomateAux(er->arg));
+	        break;
+        }
+    }
+
+    return r;
+}
+
 sAutoNDE ExpressionRationnelle2Automate(string expr)
 {
   cout << "Construction d'un automate à partir d'une expression rationnelle\n";
@@ -713,9 +771,7 @@ sAutoNDE ExpressionRationnelle2Automate(string expr)
 
   cout << "  Expression en entrée (ASA)    : " << er << endl;
 
-  sAutoNDE r;
-
-  //TODO définir cette fonction
+  sAutoNDE r = ExpressionRationnelle2AutomateAux(er);
 
   return r;
 }
