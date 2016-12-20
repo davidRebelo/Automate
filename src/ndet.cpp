@@ -564,6 +564,36 @@ sAutoNDE Union(const sAutoNDE &x, const sAutoNDE &y)
 
   //TODO définir cette fonction
 
+  //Creation d un nouvelle etat
+  r.nb_etats++;
+
+  //Pour l alphabet
+  //l aphabet est gere par append
+
+  //Pour les transitions
+  r.trans.resize(r.nb_etats);
+  r.trans[r.nb_etats-1].resize(r.nb_symbs);
+
+  //Pour les epsilones transitions
+  r.epsilon.resize(r.nb_etats);
+  r.epsilon[r.nb_etats-1].insert(x.initial);
+  r.epsilon[r.nb_etats-1].insert(y.initial+x.nb_etats);
+
+  //Pour l etat initial
+  r.initial=r.nb_etats-1;
+
+
+  //Pour les etats finaux
+  //on recupere les etats finaux de x
+  r.nb_finaux=x.nb_finaux;
+  r.finaux=x.finaux;
+  //on rajoute les etats finaux de y
+  for(set<size_t>::iterator itrr=y.finaux.begin();itrr!=y.finaux.end();itrr++)
+  {
+      r.nb_finaux++;
+      r.finaux.insert(*itrr+x.nb_etats);
+  }
+
   return r;
 }
 
