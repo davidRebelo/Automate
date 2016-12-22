@@ -796,11 +796,34 @@ sAutoNDE ExpressionRationnelle2Automate(string expr)
 
 string Automate2ExpressionRationnelle(sAutoNDE at)
 {
-  cout << "Construction d'une expression rationnelle à partir d'un automate\n";
+    cout << "Construction d'une expression rationnelle à partir d'un automate\n";
 
-  string sr;
+    string sr;
 
-  //TODO définir cette fonction
+    //TODO définir cette fonction
+
+    // Arrangement de l'automate en entrée
+    etatset_t set_vide;
+    vector<etatset_t> vect_vide;
+
+    at.nb_etats += 2; // on ajoute deux états, un inicial et un final
+    at.trans.insert(at.trans.begin(), vect_vide);
+    at.epsilon.insert(at.epsilon.begin(), set_vide);
+
+    // on ajoute une transition epsilon du nouveau etat inicial vers l'ancien etat inicial
+    at.epsilon[0].insert(at.initial);
+    at.initial = 0;
+
+    // on ajoute une transition epsilon a chaque etat final vers le nouveau etat final
+    for(auto it = at.finaux.begin(); it != at.finaux.end(); it++) {
+        at.epsilon[*it].insert(at.nb_etats-1);
+    }
+
+    // on definit le nouveau etat final
+    at.finaux.clear();
+    at.finaux.insert(at.nb_etats-1);
+
+    //TODO Construction de l'expression rationnelle à partir de l'automate arrangé
 
   return sr;
 }
