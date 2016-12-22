@@ -703,63 +703,79 @@ sAutoNDE Intersection(const sAutoNDE &x, const sAutoNDE &y)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+//fonction auxiliaire a ExpressionRationnelle2Automate
 sAutoNDE ExpressionRationnelle2AutomateAux(sExpressionRationnelle er){
-    sAutoNDE r, aux1, aux2;
-    char c;
-    int i, nb_max_symb;
+    sAutoNDE automate, aux1, aux2;
+    int i, nb_max_symb, val_trans;
+    eOperateur operation = er->op; //indique l'association a faire
 
-    switch(er->op) {
+    switch(operation) {
+        case o_etoile: { //etoile, associe un sous arbre
+	        aux1=ExpressionRationnelle2AutomateAux(er->arg);
+
+	        automate = Kleene(aux1);
+	        break;
+        }
+        case o_ou: { //Union, associe deux sous arbre
+            aux1=ExpressionRationnelle2AutomateAux(er->arg1);
+            aux2=ExpressionRationnelle2AutomateAux(er->arg2);
+
+            //si le nombre de symboles est different on attribue le meme nombre au deux sous arbres
+            if(aux1.nb_symbs != aux2.nb_symbs){
+                nb_max_symb = max(aux1.nb_symbs, aux2.nb_symbs); //on prend la plus grande valeur
+                aux1.nb_symbs = nb_max_symb;
+                aux2.nb_symbs = nb_max_symb;
+            }
+
+	        automate = Union(aux1, aux2);
+	        break;
+        }
+        case o_concat: { //concatenation, associe deux sous arbres
+            aux1=ExpressionRationnelle2AutomateAux(er->arg1);
+            aux2=ExpressionRationnelle2AutomateAux(er->arg2);
+
+            //si le nombre de symboles est different on attribue le meme nombre au deux sous arbres
+            if(aux1.nb_symbs != aux2.nb_symbs){
+                nb_max_symb = max(aux1.nb_symbs, aux2.nb_symbs); //on prend la plus grande valeur
+                aux1.nb_symbs = nb_max_symb;
+                aux2.nb_symbs = nb_max_symb;
+            }
+
+	        automate = Concat(aux1, aux2);
+	        break;
+        }
         case o_variable: {
-	        c = (er->nom->at(0)) - ASCII_A;
-	        r.nb_symbs = c+1;
-	        r.initial = 0;
-	        r.nb_etats = 2;
-	        r.finaux.insert(1);
+	        val_trans = ((er->nom->at(0))-ASCII_A);
+	        automate.nb_symbs = val_trans+1;
+	        automate.initial = 0;
+	        automate.nb_etats = 2;
 
-	        r.trans.resize(r.nb_etats);
-	        r.epsilon.resize(r.nb_etats);
-	        for (i=0; i < r.nb_etats; ++i){
-                r.trans[i].resize(r.nb_symbs);
+	        automate.finaux.insert(1);
+
+	        //definition de la taille des transitions
+	        automate.trans.resize(automate.nb_etats);
+	        automate.epsilon.resize(automate.nb_etats);
+	        for (i=0; i < automate.nb_etats; i++){
+                automate.trans[i].resize(automate.nb_symbs);
 	        }
 
-	        if (c == 'e'){ // transition epsilon
-		        r.epsilon[r.initial].insert(1);
+	        if (val_trans == 'e'){ // transition epsilon
+		        automate.epsilon[0].insert(1);
 	        }
 	        else{ // transition normale
-		        r.trans[r.initial][c].insert(1);
+		        automate.trans[0][val_trans].insert(1);
 	        }
 
 	        break;
         }
-        case o_ou: {
-            aux1=ExpressionRationnelle2AutomateAux(er->arg1);
-            aux2=ExpressionRationnelle2AutomateAux(er->arg2);
-            if(aux1.nb_symbs != aux2.nb_symbs){
-                nb_max_symb = max(aux1.nb_symbs, aux2.nb_symbs);
-                aux1.nb_symbs = nb_max_symb;
-                aux2.nb_symbs = nb_max_symb;
-            }
-	        r = Union(aux1, aux2);
-	        break;
-        }
-        case o_concat: {
-            aux1=ExpressionRationnelle2AutomateAux(er->arg1);
-            aux2=ExpressionRationnelle2AutomateAux(er->arg2);
-            if(aux1.nb_symbs != aux2.nb_symbs){
-                nb_max_symb = max(aux1.nb_symbs, aux2.nb_symbs);
-                aux1.nb_symbs = nb_max_symb;
-                aux2.nb_symbs = nb_max_symb;
-            }
-	        r = Concat(aux1, aux2);
-	        break;
-        }
-        case o_etoile: {
-	        r = Kleene(ExpressionRationnelle2AutomateAux(er->arg));
-	        break;
+        default: {
+            //erreur
+            cout << "Probleme pendant la conversion de expression a automate." << endl;
+            assert(false);
         }
     }
 
-    return r;
+    return automate;
 }
 
 sAutoNDE ExpressionRationnelle2Automate(string expr)
