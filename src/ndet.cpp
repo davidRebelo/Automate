@@ -474,85 +474,47 @@ bool ToGraph(sAutoNDE &at, string path)
 
 sAutoNDE Append(const sAutoNDE &x, const sAutoNDE &y)
 {
-  // fonction outil : on garde x, et on "ajoute" trans et epsilon de y
-  // en renommant ses états, id est en décalant les indices des états de y
-  // de x.nb_etats
-  assert(x.nb_symbs == y.nb_symbs);
-  sAutoNDE r;
+    // fonction outil : on garde x, et on "ajoute" trans et epsilon de y
+    // en renommant ses états, id est en décalant les indices des états de y
+    // de x.nb_etats
+    assert(x.nb_symbs == y.nb_symbs);
+    sAutoNDE r;
 
-  // etatset_t::const_iterator it;
-  // unsigned int i, j;
+    size_t i;
+    unsigned int j;
+    etatset_t etats;
 
-  // r.nb_etats=x.nb_etats + y.nb_etats;
-  // r.nb_symbs=x.nb_symbs;
-  // r.nb_finaux=x.nb_finaux + y.nb_finaux;
+    r.nb_symbs = x.nb_symbs;
+    r.epsilon.resize(x.nb_etats + y.nb_etats);
+    r.trans.resize(x.nb_etats + y.nb_etats);
 
-  // // on redéfinis la taille des tableaux
-  // r.epsilon.resize(r.nb_etats);
-  // r.trans.resize(r.nb_etats);
-  // for(i=0; i<r.nb_etats; ++i)
-  //   r.trans[i].resize(r.nb_symbs);
-
-  // // on décale les transitions de l'automate y
-
-  // // on ajoute les transitions de x et y
-  // for(i=0; i<r.nb_etats; i++){
-  //   if (i<x.nb_etats){
-  //     r.epsilon[i]=x.epsilon[i];
-  //     r.trans[i]=x.trans[i];
-  //   }else{
-  //     for(it=y.epsilon[i-x.nb_etats].begin(); it!=y.epsilon[i-x.nb_etats].end(); it ++)
-  //       r.epsilon[i].insert(x.nb_etats + (*it));
-  //     for(j=0; j < y.trans[i-x.nb_etats].size(); j++)
-  //       for(it=y.trans[i-x.nb_etats][j].begin(); it!=y.trans[i-x.nb_etats][j].end(); it ++)
-  //         r.trans[i][j].insert(x.nb_etats + (*it));
-  //   }
-  // }
-
-
-  // // on ajoute les états finaux
-  // for(it=x.finaux.begin(); it!=x.finaux.end(); it ++)
-  //   r.finaux.insert(*it);
-  // for(it=y.finaux.begin(); it!=y.finaux.end(); it ++)
-  //   r.finaux.insert(x.nb_etats+ (*it));
-
-  // r.epsilon.resize(r.nb_etats);
-  // r.trans.resize(r.nb_etats);
-  // for(i=0; i< r.trans.size(); i++)
-  //   r.trans[i].resize(r.nb_symbs);
-
-  //TODO
-  size_t i;
-  unsigned int j;
-  etatset_t etats;
-
-  r.nb_symbs = x.nb_symbs;
-  r.epsilon.resize(x.nb_etats + y.nb_etats);
-  r.trans.resize(x.nb_etats + y.nb_etats);
-
-  for(i = 0; i < x.nb_etats + y.nb_etats; i++) {
-    r.trans[i].resize(r.nb_symbs);
-  }
-
-  for(i = 0; i < x.nb_etats; i++) {
-    for(j = ASCII_A; j < ASCII_A + r.nb_symbs; j++) {
-      etats = x.trans[i][j];
-      r.trans[i][j].insert(etats.begin(), etats.end());
+    for(i = 0; i < x.nb_etats + y.nb_etats; i++) {
+        r.trans[i].resize(r.nb_symbs);
     }
-    etats = x.epsilon[i];
-    r.epsilon[i].insert(etats.begin(), etats.end());
-  }
 
-  for(i = 0; i < y.nb_etats; i++) {
-    for(j = ASCII_A; j < ASCII_A + r.nb_symbs; j++) {
-      etats = y.trans[i][j];
-      r.trans[i + x.nb_etats][j].insert(etats.begin(), etats.end());
+    for(i = 0; i < x.nb_etats; i++) {
+        for(j = 0; j < r.nb_symbs; j++) {
+            etats = x.trans[i][j];
+            r.trans[i][j].insert(etats.begin(), etats.end());
+        }
+        etats = x.epsilon[i];
+        r.epsilon[i].insert(etats.begin(), etats.end());
     }
-    etats = y.epsilon[i];
-    r.epsilon[i + x.nb_etats].insert(etats.begin(), etats.end());
-  }
 
-  return r;
+    for(i = 0; i < y.nb_etats; i++) {
+        for(j = 0; j < r.nb_symbs; j++) {
+            etats = y.trans[i][j];
+            for(auto it = etats.cbegin(); it != etats.cend(); it++) {
+                r.trans[i+x.nb_etats][j].insert(*it + x.nb_etats);
+            }
+        }
+        etats = y.epsilon[i];
+        for(auto it2 = etats.cbegin(); it2 != etats.cend(); it2++) {
+            r.epsilon[i + x.nb_etats].insert(*it2 + x.nb_etats);
+        }
+    }
+
+    return r;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
