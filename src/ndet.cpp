@@ -830,12 +830,58 @@ string Automate2ExpressionRationnelle(sAutoNDE at)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+//fonction recursif auxiliaire a Equivalent
+bool EquivalentAux(const sAutoNDE &a1, const sAutoNDE &a2, char* symb, int nb_symbs, char *mot_buffer, int longueur, int index){
+	if(index >= longueur){
+        if(Accept(a1, string(mot_buffer)) != Accept(a2, string(mot_buffer))){
+            return false;
+        }
+        else{
+            return true;
+        }
+	}
+
+	bool mots_equivalent = true;
+
+	for(int i=0; i<nb_symbs && mots_equivalent == true; i++){
+		mot_buffer[index] = symb[i];
+		mots_equivalent = EquivalentAux(a1, a2, symb, nb_symbs, mot_buffer, longueur, index+1);
+	}
+	return mots_equivalent;
+}
+
 bool Equivalent(const sAutoNDE &a1, const sAutoNDE &a2)
 {
+    size_t nb_max_etats = max(a1.nb_etats, a2.nb_etats);
+    int nb_symbs, index;
+    bool resultat = true;
 
-  //TODO définir cette fonction
+    //si les automates on pas le meme nombre de symboles ils ne sont pas equivalent
+    if(a1.nb_symbs != a2.nb_symbs){
+        return false;
+    }
+    else nb_symbs = a1.nb_symbs;
 
-  return false;
+    for(size_t i = 0; i < nb_max_etats && resultat != false; i++) {
+        char *lettres_utiliser_par_auto = new char[nb_symbs];
+        char *mot_buffer = new char[nb_max_etats];
+
+        //valeur de la derniere lettre
+        unsigned int derniere_lettre = ASCII_A + nb_symbs - 1;
+
+        index = 0;
+        for(unsigned char c = ASCII_A; c <= derniere_lettre; c++) {
+            lettres_utiliser_par_auto[index] = c;
+            index++;
+        }
+
+        resultat = EquivalentAux(a1, a2, lettres_utiliser_par_auto, nb_symbs, mot_buffer, nb_max_etats, 0);
+
+        delete(lettres_utiliser_par_auto);
+        delete(mot_buffer);
+    }
+
+    return resultat;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
