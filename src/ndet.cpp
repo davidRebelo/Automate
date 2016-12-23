@@ -708,7 +708,8 @@ sAutoNDE ExpressionRationnelle2AutomateAux(sExpressionRationnelle er){
         }
         case o_variable: {
 	        val_trans = ((er->nom->at(0))-ASCII_A);
-	        automate.nb_symbs = val_trans+1;
+
+	        automate.nb_symbs = 4;
 	        automate.initial = 0;
 	        automate.nb_etats = 2;
 
