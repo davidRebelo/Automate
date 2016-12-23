@@ -524,8 +524,6 @@ sAutoNDE Union(const sAutoNDE &x, const sAutoNDE &y)
   assert(x.nb_symbs == y.nb_symbs);
   sAutoNDE r = Append(x, y);
 
-  //TODO définir cette fonction
-
   //Creation d un nouvelle etat
   r.nb_etats++;
 
@@ -555,112 +553,100 @@ sAutoNDE Union(const sAutoNDE &x, const sAutoNDE &y)
       r.finaux.insert(*itrr+x.nb_etats);
   }
 
-  return r;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-sAutoNDE Concat(const sAutoNDE &x, const sAutoNDE &y)
-{
-  assert(x.nb_symbs == y.nb_symbs);
-  sAutoNDE r = Append(x, y);
-
-  //TODO définir cette fonction
-  etatset_t::const_iterator it;
-  unsigned int i;
-
-  r.initial=x.initial;
-  for (it=x.finaux.begin(); it!=x.finaux.end(); it ++){
-    r.epsilon[(*it)].insert(y.initial + x.nb_etats);
-    r.finaux.erase(*it);
-  }
-
-  r.epsilon.resize(r.nb_etats);
-  r.trans.resize(r.nb_etats);
-  for(i=0; i< r.trans.size(); i++)
-    r.trans[i].resize(r.nb_symbs);
 
   return r;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-sAutoNDE Complement(const sAutoNDE &x)
-{
-  //TODO définir cette fonction
-  sAutoNDE r=x;
-  etatset_t finaux_tmp;
-  etatset_t::iterator it;
-  unsigned int i;
-  bool est_final;
+sAutoNDE Concat(const sAutoNDE &x, const sAutoNDE &y){
+    assert(x.nb_symbs == y.nb_symbs);
+    sAutoNDE r = Append(x, y);
 
-  for (i=0; i<r.nb_etats; i++){
-    est_final=false;
-    for(it=r.finaux.begin(); it!=r.finaux.end(); it ++)
-      if ((*it) == i)
-        est_final=true;
-    if(!est_final)
-      finaux_tmp.insert(i);
-  }
-  r.finaux=finaux_tmp;
-  r.nb_finaux=r.finaux.size();
+    r.nb_etats = x.nb_etats + y.nb_etats;
+    r.initial = x.initial;
+    r.nb_finaux = 0;
 
-  return x;
+    //on lie des transitions epsilon des etats finaux de x a l'etat inicial de y
+    for (auto it=x.finaux.begin(); it!=x.finaux.end(); it ++){
+        r.epsilon[*it].insert(y.initial + x.nb_etats);
+        r.finaux.erase(*it);
+    }
+
+    // on attribut a r les etats finaux de y
+    for(auto it = y.finaux.begin(); it != y.finaux.end(); it++) {
+        r.finaux.insert(x.nb_etats + *it);
+        r.nb_finaux++;
+    }
+
+    return r;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-sAutoNDE Kleene(const sAutoNDE &x)
-{
-  //TODO définir cette fonction
+sAutoNDE Complement(const sAutoNDE &x){
+    sAutoNDE r = x;
+    r.nb_finaux = x.nb_etats - x.nb_finaux;
+    etatset_t finaux_tmp;
+    bool est_final;
 
-  // return x;
-  sAutoNDE tmp;
+    for (unsigned int i=0; i<r.nb_etats; i++){
+        est_final=false;
+        for(auto it=r.finaux.begin(); it!=r.finaux.end(); it ++)
+        if ((*it) == i) est_final=true;
+        if(!est_final) finaux_tmp.insert(i);
+    }
 
-  etatset_t::const_iterator it;
-  unsigned int i;
+    r.finaux=finaux_tmp;
+    r.nb_finaux=r.finaux.size();
 
-  tmp.nb_etats=x.nb_etats;
-  tmp.nb_symbs=x.nb_symbs;
-  tmp.nb_finaux=x.nb_finaux;
+    return r;
+}
 
-  tmp.initial=x.initial;
-  tmp.finaux=x.finaux;
-  tmp.trans=x.trans;
-  tmp.epsilon=x.epsilon;
+////////////////////////////////////////////////////////////////////////////////
 
-  for(it=tmp.finaux.begin(); it!=tmp.finaux.end(); it++)
+sAutoNDE Kleene(const sAutoNDE &x){
+    sAutoNDE tmp;
+
+    etatset_t::const_iterator it;
+    unsigned int i;
+
+    tmp.nb_etats=x.nb_etats;
+    tmp.nb_symbs=x.nb_symbs;
+    tmp.nb_finaux=x.nb_finaux;
+
+    tmp.initial=x.initial;
+    tmp.finaux=x.finaux;
+    tmp.trans=x.trans;
+    tmp.epsilon=x.epsilon;
+
+    for(it=tmp.finaux.begin(); it!=tmp.finaux.end(); it++)
     tmp.epsilon.at(*it).insert(tmp.initial);
 
-  tmp.nb_etats++;
-  tmp.epsilon.resize(tmp.nb_etats);
+    tmp.nb_etats++;
+    tmp.epsilon.resize(tmp.nb_etats);
 
-  tmp.epsilon[x.nb_etats].insert(tmp.initial);
+    tmp.epsilon[x.nb_etats].insert(tmp.initial);
 
-  tmp.initial=tmp.nb_etats-1;
-  tmp.finaux.insert(tmp.initial);
+    tmp.initial=tmp.nb_etats-1;
+    tmp.finaux.insert(tmp.initial);
 
-  tmp.epsilon.resize(tmp.nb_etats);
-  tmp.trans.resize(tmp.nb_etats);
-  for(i=0; i< tmp.trans.size(); i++) {
-    tmp.trans[i].resize(tmp.nb_symbs);
-  }
+    tmp.epsilon.resize(tmp.nb_etats);
+    tmp.trans.resize(tmp.nb_etats);
+    for(i=0; i< tmp.trans.size(); i++){
+        tmp.trans[i].resize(tmp.nb_symbs);
+    }
 
-  return tmp;
+    return tmp;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-sAutoNDE Intersection(const sAutoNDE &x, const sAutoNDE &y)
-{
-  //TODO définir cette fonction
-
-  // return x;
-  sAutoNDE a=Complement(x);
-  sAutoNDE b=Complement(y);
-  sAutoNDE r=Union(a, b);
-  return Complement(r);
-
+sAutoNDE Intersection(const sAutoNDE &x, const sAutoNDE &y){
+    sAutoNDE a=Complement(x);
+    sAutoNDE b=Complement(y);
+    sAutoNDE r=Union(a, b);
+    return Complement(r);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -741,24 +727,22 @@ sAutoNDE ExpressionRationnelle2AutomateAux(sExpressionRationnelle er){
     return automate;
 }
 
-sAutoNDE ExpressionRationnelle2Automate(string expr)
-{
-  cout << "Construction d'un automate à partir d'une expression rationnelle\n";
-  cout << "  Expression en entrée (string) : " << expr << endl;
+sAutoNDE ExpressionRationnelle2Automate(string expr){
+    cout << "Construction d'un automate à partir d'une expression rationnelle\n";
+    cout << "  Expression en entrée (string) : " << expr << endl;
 
-  sExpressionRationnelle er = lit_expression_rationnelle(expr);
+    sExpressionRationnelle er = lit_expression_rationnelle(expr);
 
-  cout << "  Expression en entrée (ASA)    : " << er << endl;
+    cout << "  Expression en entrée (ASA)    : " << er << endl;
 
-  sAutoNDE r = ExpressionRationnelle2AutomateAux(er);
+    sAutoNDE r = ExpressionRationnelle2AutomateAux(er);
 
-  return r;
+    return r;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-string Automate2ExpressionRationnelle(sAutoNDE at)
-{
+string Automate2ExpressionRationnelle(sAutoNDE at){
     cout << "Construction d'une expression rationnelle à partir d'un automate\n";
 
     string sr;
@@ -795,10 +779,9 @@ string Automate2ExpressionRationnelle(sAutoNDE at)
 
 //fonction recursif auxiliaire a Equivalent
 bool EquivalentAux(const sAutoNDE &a1, const sAutoNDE &a2, char* symb, int nb_symbs, char *mot_buffer, int longueur, int index){
+
+	//si le mot a finit d'etre generer il verifie si le mot est accepter ou non en meme temps par les deux automate
 	if(index >= longueur-1){
-
-    cout << mot_buffer << " ";
-
         if(Accept(a1, string(mot_buffer)) != Accept(a2, string(mot_buffer))){
             return false;
         }
@@ -809,6 +792,7 @@ bool EquivalentAux(const sAutoNDE &a1, const sAutoNDE &a2, char* symb, int nb_sy
 
 	bool mots_equivalent = true;
 
+	//sinon le mot est toujours en phase de generation
 	for(int i=0; i<nb_symbs && mots_equivalent == true; i++){
 		mot_buffer[index] = symb[i];
 		mots_equivalent = EquivalentAux(a1, a2, symb, nb_symbs, mot_buffer, longueur, index+1);
@@ -816,8 +800,7 @@ bool EquivalentAux(const sAutoNDE &a1, const sAutoNDE &a2, char* symb, int nb_sy
 	return mots_equivalent;
 }
 
-bool Equivalent(const sAutoNDE &a1, const sAutoNDE &a2)
-{
+bool Equivalent(const sAutoNDE &a1, const sAutoNDE &a2){
     size_t nb_max_etats = max(a1.nb_etats, a2.nb_etats);
     int nb_symbs, index;
     bool resultat = true;
@@ -830,20 +813,26 @@ bool Equivalent(const sAutoNDE &a1, const sAutoNDE &a2)
 
     for(size_t i = 1; i <= nb_max_etats && resultat != false; i++) {
         char *lettres_utiliser_par_auto = new char[nb_symbs]();
-        char *mot_buffer = new char[i+1]();
+        char *mot_buffer = new char[i+1];
+        for(int j = 0; j < i; j++){
+            mot_buffer[j] = ASCII_A;
+        }
         mot_buffer[i] = '\0';
 
         //valeur de la derniere lettre
         unsigned int derniere_lettre = ASCII_A + nb_symbs - 1;
 
+        //stock dans un char toutes les lettres qui seront utiliser pour les mots
         index = 0;
         for(unsigned char c = ASCII_A; c <= derniere_lettre; c++) {
             lettres_utiliser_par_auto[index] = c;
             index++;
         }
 
+        //genere tous les mots possibles et verifie si les deux automates accepte ou non chaque
+        //mot, si la verification d'un mot varie d'un automate a l'autre la
+        //fonction reenvoi faux et les automates ne sont pas equivalent
         resultat = EquivalentAux(a1, a2, lettres_utiliser_par_auto, nb_symbs, mot_buffer, i+1, 0);
-
 
         delete(lettres_utiliser_par_auto);
         delete(mot_buffer);
